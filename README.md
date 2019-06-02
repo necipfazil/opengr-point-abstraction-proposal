@@ -1,3 +1,9 @@
+## Introduction
+This proposal is composed of three subsections:  
+__1. PointType (and VectorType, ColorType) Abstraction__: The introduction of templated Handler structure, which is going to be specialized for any external point type to be used with OpenGR.  
+__2. Introduction of Range and PropertyMaps__: The introduction of range and property maps to make use of any type of container.  
+__3. PointFilter Abstraction__: The introduction of PointFilter abstraction to allow different filter mechanisms to be applied on different point types, which could be tuned at runtime.  
+
 ## PointType (and VectorType, ColorType) Abstraction  
 In OpenGR, positions, vectors and colors are represented with vectors. However, different libraries might use different representations for each. Therefore, we might need to abstract them seperately. While it enriches the interface and allows more adaptability, it won't put much workload.  
 
