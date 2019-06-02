@@ -1,4 +1,5 @@
-# opengr-point-abstraction-proposal
+## PointType (and VectorType, ColorType) Abstraction  
+In OpenGR, positions, vectors and colors are represented with vectors. However, different libraries might use different representations for each. Therefore, we might need to abstract them seperately. While it enriches the interface and allows more adaptability, it won't put much workload.  
 
 ### Files
 * [gr/](gr/) Subset of OpenGR library  
@@ -34,3 +35,98 @@ Wherever points are involved, the point type will be passed as template argument
 The point type `gr::Point3D` or its interface is used pretty much everywhere in the library. For example, to obtain the position of a point, `gr::Point3D::pos()` function is called on point object. Even when the PointType is templated, `pos()` function is assumed to be a member of the class PointType, which worked well when `gr::Point3D` is used. However, with the above strategy, `pointObject.pos()` calls should be replaced by a function like `PointHandler<PointType>::pos(pointObject)` (Remember above strategy: `PointHandler<PointType>::pos(pointObject)` will be required to be specialized by any external point type). Therefore, although it is straightforward, almost all files of the library will need changes.  
 
 An alternative to the above foreseen change scheme is as follows: at the initialization step, the point clouds are sampled. The sampled points are duplicated in the memory (possibly a subset of the original point clouds). Instead of using the handlers (PointHandler, VectorHandler etc.) at the core of the library, the handlers could propagate up to sampling. While sampling the point clouds, the duplicates could be constructed as `gr::Point3D`. This way, we can continue to use `gr::Point3D` under the hood, without needing to change the underlying implementations. However, this will not allow us to propagate arbitrary attributes of external point types, which will prevent us from introducing filters that work on arbitrary attributes.
+
+## Introduction of Range and PropertyMaps  
+When we take CGAL range and property map usage as reference, using pretty much the same mechanism allows us to abstract the ranges and the interpretation of items accessed through iterators of those ranges using property maps become straightforward.  
+
+Here are the proposed API changes with the introduction of Range and PropertyMaps:  
+
+__****************************__  
+Existing function signature for `MatchBase::ComputeTransformation`:  
+```
+template <typename Sampler>
+  Scalar ComputeTransformation(
+    const std::vector<Point3D>& P,
+    const std::vector<Point3D>& Q,
+    Eigen::Ref<MatrixType> transformation,
+    const Sampler& sampler,
+    TransformVisitor& v);
+```
+
+Proposed function signature for `MatchBase::ComputeTransformation`:  
+```
+template <typename Sampler, typename PointRange1, typename PointMap1, typename PointType1, typename PointRange2, typename PointMap2, typename PointType2, typename NormalRange1, typename NormalMap1, typename VectorType1, typename NormalRange2, typename NormalMap2, typename VectorType2, typename ColorRange1, typename ColorMap1, typename ColorType1, typename ColorRange2, typename ColorMap2, typename ColorType2>
+  Scalar ComputeTransformation(
+    const PointRange1& P,
+    const PointMap1& P_map, // value_type of PointRange1 to PointType1
+    const NormalRange1& P_normals, // this could be the same as PointRange1 for gr::Point3D, which is going to be resolved different thanks to NormalMap1
+    const NormalMap1& P_normal_map,
+    const ColorRange1& P_colors, // this could be the same as PointRange1 for gr::Point3D, which is going to be resolved different thanks to NormalMap1
+    const ColorMap1& P_color_map,
+    const PointRange2& Q,
+    const PointMap2& Q_map, // value_type of PointRange2 to PointType2
+    const NormalRange2& Q_normals, // this could be the same as PointRange2 for gr::Point3D, which is going to be resolved different thanks to NormalMap2
+    const NormalMap2& Q_normal_map,
+    const ColorRange2& Q_colors,
+    const ColorMap2& Q_color_map,
+    Eigen::Ref<MatrixType> transformation,
+    const Sampler& sampler,
+    TransformVisitor& v);
+
+```
+__****************************__  
+
+Existing function signature for `MatchBase::Initialize()`:  
+```
+virtual void Initialize(const std::vector<Point3D>& /*P*/,
+                        const std::vector<Point3D>& /*Q*/) = 0;
+```
+
+Proposed function signature for `MatchBase::Initialize()`:  
+```
+template<typename PointRange1, typename PointMap1, typename PointType1, typename PointRange2, typename PointMap2, typename PointType2, typename NormalRange1, typename NormalMap1, typename VectorType1, typename NormalRange2, typename NormalMap2, typename VectorType2, typename ColorRange1, typename ColorMap1, typename ColorType1, typename ColorRange2, typename ColorMap2, typename ColorType2>
+virtual void Initialize(
+    const PointRange1& /*P*/,
+    const PointMap1& /*Pmap*/,
+    const NormalRange1& /*P_normals*/,
+    const NormalMap1& /*P_normal_map*/,
+    const ColorRange1& /*P_colors*/,
+    const ColorMap1& /*P_color_map*/,
+    const PointRange2& /*Q*/,
+    const PointMap2& /*Q_map*/,
+    const NormalRange2& /*Q_normals*/,
+    const NormalMap2& /*Q_normal_map*/,
+    const ColorRange2& /*Q_colors*/,
+    const ColorMap2& /*Q_color_map*/) = 0;
+```
+
+__****************************__  
+
+Existing function signature for `MatchBase::init()`:  
+```
+
+template <typename Sampler>
+void init(const std::vector<Point3D>& P,
+          const std::vector<Point3D>& Q,
+          const Sampler& sampler);       
+```
+
+Proposed function signature for `MatchBase::Initialize()`:  
+```
+template<typename Sampler, typename PointRange1, typename PointMap1, typename PointType1, typename PointRange2, typename PointMap2, typename PointType2, typename NormalRange1, typename NormalMap1, typename VectorType1, typename NormalRange2, typename NormalMap2, typename VectorType2, typename ColorRange1, typename ColorMap1, typename ColorType1, typename ColorRange2, typename ColorMap2, typename ColorType2>
+void init(
+    const PointRange1& P,
+    const PointMap1& P_map,
+    const NormalRange1& P_normals,
+    const NormalMap1& P_normal_map,
+    const ColorRange1& P_colors,
+    const ColorMap1& P_color_map,
+    const PointRange2& Q,
+    const PointMap2& Q_map,
+    const NormalRange2& Q_normals,
+    const NormalMap2& Q_normal_map,
+    const ColorRange2& Q_colors,
+    const ColorMap2& Q_color_map,
+    const Sampler& sampler);
+
+```
