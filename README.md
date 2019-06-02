@@ -43,11 +43,16 @@ The point type `gr::Point3D` or its interface is used pretty much everywhere in 
 An alternative to the above foreseen change scheme is as follows: at the initialization step, the point clouds are sampled. The sampled points are duplicated in the memory (possibly a subset of the original point clouds). Instead of using the handlers (PointHandler, VectorHandler etc.) at the core of the library, the handlers could propagate up to sampling. While sampling the point clouds, the duplicates could be constructed as `gr::Point3D`. This way, we can continue to use `gr::Point3D` under the hood, without needing to change the underlying implementations. However, this will not allow us to propagate arbitrary attributes of external point types, which will prevent us from introducing filters that work on arbitrary attributes.
 
 ## Introduction of Range and PropertyMaps  
-When we take CGAL range and property map usage as reference, using pretty much the same mechanism allows us to abstract the ranges and the interpretation of items accessed through iterators of those ranges using property maps become straightforward.  
+When we take CGAL range and property map usage as reference, using the same mechanism allows us to abstract the containers and the interpretation of items accessed through iterators of those containers using property maps.  
 
-Here are the proposed API changes with the introduction of Range and PropertyMaps:  
+[Three Main API Changes](#three-main-api-changes) section shows proposed API changes with the introduction of Range and PropertyMaps. Private methods will need adapting as well. However, the following API changes follow the same structure, and show how the proposed change will effect the overall library.  
 
-__****************************__  
+For the implementation of the range and property maps, CGAL will be taken as reference. For convenience, [already implemented property map structures of CGAL](https://github.com/CGAL/cgal/blob/master/Property_map/include/CGAL/property_map.h) can be migrated to OpenGR, which are likely to be used by OpenGR or while interacting with external libraries.  
+
+
+### Three Main API Changes
+
+ 
 Existing function signature for `MatchBase::ComputeTransformation`:  
 ```
 template <typename Sampler>
@@ -80,7 +85,7 @@ template <typename Sampler, typename PointRange1, typename PointMap1, typename P
     TransformVisitor& v);
 
 ```
-__****************************__  
+---  
 
 Existing function signature for `MatchBase::Initialize()`:  
 ```
@@ -106,7 +111,7 @@ virtual void Initialize(
     const ColorMap2& /*Q_color_map*/) = 0;
 ```
 
-__****************************__  
+--- 
 
 Existing function signature for `MatchBase::init()`:  
 ```
