@@ -8,6 +8,7 @@ __3. PointFilter Abstraction__: The changes on PointFilter abstraction to allow 
 In OpenGR, positions, vectors and colors are represented with vectors. However, different libraries might use different representations for each. Therefore, we might need to abstract them seperately. While it enriches the interface and allows more adaptability, it won't put much workload.  
 
 ### 1.a. Files
+This repository includes a demo of the proposed PointType abstraction mechanism. Followings are the structure for the files:  
 * [gr/](gr/) Subset of OpenGR library  
   * [gr/PointHandler.hpp](gr/PointHandler.hpp) The declaration of the template type `PointHandler`, whose static functions are to be specialized for point type of any external library for interoperability (Same will be done for vector and color type, or any other type of data that OpenGR use and external library might feed).
   * [gr/Algorithms.hpp](gr/Algorithms.hpp) An example algorithms file, which make use of the template type `PointHandler` when it needs to reach to the attributes of a point. The specialized `PointHandler` functions will be used, therefore, once the functions needed for `PointHandler` are speciliazied, OpenGR will freely make use of attributes of external libraries' point types.  
@@ -17,6 +18,7 @@ In OpenGR, positions, vectors and colors are represented with vectors. However, 
 * [wrapper/](wrapper/) Wrappers for external libraries' point types  
   * [wrapper/PointHandler_MyPoint1.hpp](wrapper/PointHandler_MyPoint1.hpp) The specializations of `PointHandler` functions for the point type (`MyPoint1`) of external library 1.
   * [wrapper/PointHandler_MyPoint2.hpp](wrapper/PointHandler_MyPoint2.hpp) The specializations of `PointHandler` functions for the point type (`MyPoint2`) of external library 2.  
+* [test.cpp](test.cpp) The test program that stands as demo. As could be seen, `gr::algo::sum_of_coords` works on different point types thanks to the point type abstraction and the wrappers for those point types. To compile, use `make all`. To run, use `make run`.  
   
 ### 1.b. Strategy  
 We want to allow usage of any point type in OpenGR. In certain parts of the OpenGR library, which attributes of point type we need to use are known. For example, we want to construct points, we want to get points' x, y, z coordinates, or we want to set their coordinates. Therefore, we can define what we need from a point: implementation of a `getX()` function, implementation of a `setY()` function, etc..  
